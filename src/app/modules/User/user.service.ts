@@ -15,7 +15,7 @@ const createUser = async (payload: any) => {
   });
 
   if (existingUser) {
-    if (existingUser.UserStatus === UserStatus.INACTIVE) {
+    if (existingUser.UserStatus === UserStatus.BLOCK) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'This user is inactive and cannot be created.'
