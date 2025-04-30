@@ -1,0 +1,82 @@
+// datasource and generator setup
+datasource db {
+    provider = "mongodb"
+    url      = env("DATABASE_URL")
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+// ---------------------------------------------------------
+//  ENUMS
+// ---------------------------------------------------------
+
+enum UserStatus {
+    ACTIVE
+    BLOCK
+}
+
+enum Role {
+    SUPER_ADMIN
+    ADMIN
+    USER
+}
+
+// ---------------------------------------------------------
+//  MODELS
+// ---------------------------------------------------------
+
+model User {
+    id           String     @id @default(auto()) @map("_id") @db.ObjectId
+    firstName    String
+    lastName     String?
+    email        String     @unique
+    password     String
+    userName     String     @unique
+    dateOfBirth  DateTime?
+    profileImage String?    @default("https://i.ibb.co.com/XfLzVy23/download.png")
+    UserStatus   UserStatus @default(ACTIVE)
+    otp          String?
+    otpExpiry    DateTime?
+    hexCode      String?
+    role         Role       @default(USER)
+    createdAt    DateTime   @default(now())
+    updatedAt    DateTime   @updatedAt
+    person1      Channel[]  @relation("ChannelPerson1")
+    person2      Channel[]  @relation("ChannelPerson2")
+    replay       Replay[]
+
+    @@map("users")
+}
+
+model Channel {
+    id          String   @id @default(auto()) @map("_id") @db.ObjectId
+    channelName String   @unique
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    //Relations
+    person1Id String?  @db.ObjectId
+    person1   User?    @relation("ChannelPerson1", fields: [person1Id], references: [id])
+    person2Id String?  @db.ObjectId
+    person2   User?    @relation("ChannelPerson2", fields: [person2Id], references: [id])
+    replay    Replay[]
+
+    @@map("channels")
+}
+
+model Replay {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    message   String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    // Relations
+    senderId    String?  @db.ObjectId
+    sender      User?    @relation(fields: [senderId], references: [id])
+    channelName String
+    Channel     Channel? @relation(fields: [channelName], references: [channelName])
+
+    @@map("messages")
+}
