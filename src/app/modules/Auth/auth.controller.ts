@@ -8,25 +8,27 @@ import config from '../../../config';
 // login user
 const loginUser = catchAsync(async (req, res) => {
   const { email, password } = req.body;
+  const { accessToken, refreshToken } = await AuthServices.login(
+    email,
+    password
+  );
 
-  const result = await AuthServices.login(email, password);
-
-  const { refreshToken } = result;
-
+  // set refresh token cookie
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax', // or 'none' if you need cross-site cookies
+    maxAge: 7 * 24 * 3600 * 1000, // e.g. 7 days
   });
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: 'Login successful',
-    data: {
-      accessToken: result.accessToken,
-    },
+  // return the access token under the key 'token'
+  res.status(httpStatus.OK).json({
+    // success: true,
+    // message: 'User logged in successfully',
+    token: accessToken,
   });
 });
+
 const enterOtp = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthServices.enterOtp(req.body);
 

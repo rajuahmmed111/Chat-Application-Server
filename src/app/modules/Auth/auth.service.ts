@@ -57,6 +57,7 @@ const login = async (email: string, password: string) => {
     refreshToken,
   };
 };
+
 const enterOtp = async (payload: {
   otp: string;
   hexCode: string;
