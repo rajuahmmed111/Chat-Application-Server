@@ -22,7 +22,6 @@ router.put(
   AuthController.changePassword
 );
 
-// router.put('/change-password', auth(), AuthController.changePassword);
 router.post("/forgot-password", AuthController.forgotPassword);
 
 router.post("/reset-password", AuthController.resetPassword);
