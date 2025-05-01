@@ -33,6 +33,7 @@ model User {
     lastName     String?
     email        String     @unique
     password     String
+    phone        String
     userName     String     @unique
     dateOfBirth  DateTime?
     profileImage String?    @default("https://i.ibb.co.com/XfLzVy23/download.png")
