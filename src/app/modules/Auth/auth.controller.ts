@@ -5,16 +5,28 @@ import sendResponse from '../../../shared/sendResponse';
 import { AuthServices } from './auth.service';
 import config from '../../../config';
 
-const loginUser = catchAsync(async (req: Request, res: Response) => {
-  const result = await AuthServices.login(req.body);
+// login user
+const loginUser = catchAsync(async (req, res) => {
+  const { email, password } = req.body;
+
+  const result = await AuthServices.login(email, password);
+
+  const { refreshToken } = result;
+
+  res.cookie('refreshToken', refreshToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+  });
+
   sendResponse(res, {
-    statusCode: httpStatus.OK,
+    statusCode: 200,
     success: true,
-    message: 'OTP sent successfully',
-    data: result,
+    message: 'Login successful',
+    data: {
+      accessToken: result.accessToken,
+    },
   });
 });
-
 const enterOtp = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthServices.enterOtp(req.body);
 
