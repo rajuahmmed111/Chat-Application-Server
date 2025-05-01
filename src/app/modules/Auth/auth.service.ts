@@ -2,7 +2,7 @@ import { User, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import httpStatus from 'http-status';
-import { Secret } from 'jsonwebtoken';
+import { JwtPayload, Secret } from 'jsonwebtoken';
 import config from '../../../config';
 import ApiError from '../../../errors/ApiErrors';
 import prisma from '../../../shared/prisma';
@@ -222,43 +222,84 @@ const forgotPassword = async (payload: { email: string }) => {
 };
 
 // reset password
-const resetPassword = async (
-  token: string,
-  payload: { id: string; password: string }
-) => {
-  // console.log(token)
-  const userData = await prisma.user.findUniqueOrThrow({
+// const resetPassword = async (
+//   token: string,
+//   payload: { id: string; password: string }
+// ) => {
+//   // console.log(token)
+//   const userData = await prisma.user.findUniqueOrThrow({
+//     where: {
+//       id: payload.id,
+//     },
+//   });
+
+//   if (!userData) {
+//     throw new ApiError(404, 'User not found');
+//   }
+
+//   const isValidToken = jwtHelpers.verifyToken(
+//     token,
+//     config.jwt.reset_pass_secret as Secret
+//   );
+
+//   if (!isValidToken) {
+//     throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden!');
+//   }
+
+//   // console.log(payload.password);
+//   // hash password
+//   const password = await bcrypt.hash(payload.password, 12);
+
+//   await prisma.user.update({
+//     where: {
+//       id: payload.id,
+//     },
+//     data: {
+//       password,
+//     },
+//   });
+//   return { message: 'Password reset successfully' };
+// };
+
+// reset password
+const resetPassword = async (token: string, newPassword: string) => {
+  let decodedData;
+
+  try {
+    decodedData = jwtHelpers.verifyToken(
+      token,
+      config.jwt.reset_pass_secret as string
+    ) as JwtPayload;
+  } catch (err) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'Your not authorized');
+  }
+
+  const userData = await prisma.user.findUnique({
     where: {
-      id: payload.id,
+      id: decodedData?.id,
+      userStatus: UserStatus.ACTIVE,
     },
   });
-
   if (!userData) {
-    throw new ApiError(404, 'User not found');
+    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  const isValidToken = jwtHelpers.verifyToken(
-    token,
-    config.jwt.reset_pass_secret as Secret
-  );
+  // password validation
+  const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-  if (!isValidToken) {
-    throw new ApiError(httpStatus.FORBIDDEN, 'Forbidden!');
-  }
-
-  // console.log(payload.password);
-  // hash password
-  const password = await bcrypt.hash(payload.password, 12);
-
+  // update user
   await prisma.user.update({
     where: {
-      id: payload.id,
+      id: userData.id,
     },
     data: {
-      password,
+      password: hashedPassword,
     },
   });
-  return { message: 'Password reset successfully' };
+
+  return {
+    message: 'Password changed successfully',
+  };
 };
 
 // logout

@@ -108,16 +108,18 @@ const forgotPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  const token = req.headers.authorization || '';
+// reset password
+const resetPassword = catchAsync(async (req, res) => {
+  // const { token } = req.params;
+  const { token, password } = req.body;
 
-  await AuthServices.resetPassword(token, req.body);
+  const result = await AuthServices.resetPassword(token, password);
 
   sendResponse(res, {
-    statusCode: httpStatus.OK,
+    statusCode: 200,
     success: true,
-    message: 'Password Reset!',
-    data: null,
+    message: 'Password reset successfully',
+    data: result,
   });
 });
 
