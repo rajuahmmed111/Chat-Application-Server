@@ -28,7 +28,7 @@ const login = async (payload: {
   }
 
   // Check if the user account is inactive
-  if (userData.UserStatus === UserStatus.INACTIVE) {
+  if (userData.UserStatus === UserStatus.BLOCK) {
     throw new Error('Your account is inactive');
   }
 
@@ -166,7 +166,7 @@ const getMyProfile = async (id: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
   }
 
-  if (userProfile.UserStatus === UserStatus.INACTIVE) {
+  if (userProfile.UserStatus === UserStatus.BLOCK) {
     throw new ApiError(httpStatus.FORBIDDEN, 'Your account is blocked');
   }
   return userProfile;
