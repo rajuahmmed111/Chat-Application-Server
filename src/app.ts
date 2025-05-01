@@ -33,7 +33,7 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'))); // Ser
 // Route handler for the root endpoint
 app.get('/', (req: Request, res: Response) => {
   res.send({
-    message: 'Welcome to the API!',
+    message: 'Welcome to Chat Application API!',
   });
 });
 
