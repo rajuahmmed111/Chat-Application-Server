@@ -7,7 +7,6 @@ import config from '../../../config';
 import { UserStatus } from '@prisma/client';
 import { ObjectId } from 'mongodb';
 
-
 // create user
 const createUser = async (payload: any) => {
   const existingUser = await prisma.user.findUnique({
@@ -41,6 +40,7 @@ const createUser = async (payload: any) => {
     data: {
       ...payload,
       password: hashedPassword,
+      dateOfBirth: new Date(),
     },
   });
 
@@ -48,7 +48,6 @@ const createUser = async (payload: any) => {
 
   return updateUser;
 };
-
 
 // check user  name
 const checkUsernameExists = async (userName: string) => {
@@ -77,7 +76,6 @@ const getUserById = async (id: string) => {
   }
   return user;
 };
-
 
 // delete a user
 const deleteUser = async (userId: string, loggedId: string) => {
