@@ -1,15 +1,19 @@
 import httpStatus from 'http-status';
 import catchAsync from '../../../shared/catchAsync';
 import sendResponse from '../../../shared/sendResponse';
-import { replayService } from './replay.service';
+import { replayService } from './message.service';
 
-// send replay in ticket ways user
-const sendReplay = catchAsync(async (req, res) => {
-  const senderId = req.user?.id;
-  const ticketId = req.params.ticketId;
-  const { message } = req.body;
+// create channel 
+const createChannel = catchAsync(async (req, res) => {
+  const userId = req.user?.id;
+  const { name, type, memberIds } = req.body;
 
-  const result = await replayService.sendReplay(senderId, ticketId, message);
+  const channel = await ChannelService.createChannel({
+    name,
+    type,
+    memberIds: allMemberIds,
+    creatorId: userId
+  });
 
   sendResponse(res, {
     statusCode: httpStatus.CREATED,

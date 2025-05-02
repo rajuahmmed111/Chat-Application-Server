@@ -82,13 +82,23 @@
 import { Server } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { PrismaClient } from '@prisma/client';
+import { ObjectId } from 'mongodb';
 import config from './config';
 import app from './app';
-import { ObjectId } from 'mongodb'; // Add this import
 
 const prisma = new PrismaClient();
 let wss: WebSocketServer;
 const channelClients = new Map<string, Set<WebSocket>>();
+
+// Helper function to check if a string is a valid ObjectId
+function isValidObjectId(id: string): boolean {
+  try {
+    new ObjectId(id);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
 
 function broadcastToChannel(
   channelId: string,
@@ -118,12 +128,25 @@ async function main() {
     console.log('New WebSocket connection!');
 
     let channelId: string | null = null;
+
     // client received message
     ws.on('message', async (message) => {
       try {
         const parsed = JSON.parse(message.toString());
+
         if (parsed.type === 'subscribe' && parsed.channelId) {
           channelId = parsed.channelId;
+
+          // Validate ObjectId
+          if (!isValidObjectId(channelId)) {
+            ws.send(
+              JSON.stringify({
+                type: 'error',
+                message: 'Invalid channel ID format',
+              })
+            );
+            return;
+          }
 
           if (channelId && !channelClients.has(channelId)) {
             channelClients.set(channelId, new Set());
@@ -135,6 +158,15 @@ async function main() {
             where: { channelId },
             orderBy: { timestamp: 'asc' },
             take: 50, // Limit to recent messages
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  // name: true,
+                  // avatar: true,
+                },
+              },
+            },
           });
 
           ws.send(
@@ -150,7 +182,18 @@ async function main() {
           // Handle new chat message
           const { channelId, content, senderId, messageType = 'text' } = parsed;
 
-          // Create a new message object with MongoDB ObjectId
+          // Validate ObjectIds
+          if (!isValidObjectId(channelId) || !isValidObjectId(senderId)) {
+            ws.send(
+              JSON.stringify({
+                type: 'error',
+                message: 'Invalid ID format',
+              })
+            );
+            return;
+          }
+
+          // Create a new message
           const newMessage = {
             channelId,
             senderId,
@@ -163,6 +206,15 @@ async function main() {
           // Save message to database
           const savedMessage = await prisma.message.create({
             data: newMessage,
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  // name: true,
+                  // avatar: true,
+                },
+              },
+            },
           });
 
           // Broadcast to all clients in the channel
@@ -182,6 +234,12 @@ async function main() {
         } else if (parsed.type === 'typing') {
           // Handle typing indicators
           const { channelId, senderId, isTyping } = parsed;
+
+          // Validate ObjectIds
+          if (!isValidObjectId(channelId) || !isValidObjectId(senderId)) {
+            return;
+          }
+
           broadcastToChannel(
             channelId,
             {
@@ -194,6 +252,15 @@ async function main() {
         } else if (parsed.type === 'read_receipt') {
           // Handle read receipts
           const { channelId, messageId, senderId } = parsed;
+
+          // Validate ObjectIds
+          if (
+            !isValidObjectId(channelId) ||
+            !isValidObjectId(messageId) ||
+            !isValidObjectId(senderId)
+          ) {
+            return;
+          }
 
           // Update message status in database
           await prisma.message.update({
@@ -209,6 +276,12 @@ async function main() {
         }
       } catch (err: any) {
         console.error('error:', err.message);
+        ws.send(
+          JSON.stringify({
+            type: 'error',
+            message: 'Invalid message format',
+          })
+        );
       }
     });
 
