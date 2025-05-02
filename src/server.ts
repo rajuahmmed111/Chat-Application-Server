@@ -79,9 +79,6 @@
 
 // main();
 
-
-
-// update server
 import { Server } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
 import { PrismaClient } from '@prisma/client';
