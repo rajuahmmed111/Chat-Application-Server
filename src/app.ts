@@ -12,7 +12,10 @@ import GlobalErrorHandler from './app/middleware/globalErrorHandler';
 const app: Application = express();
 
 export const corsOptions = {
-  origin: ['http://localhost:3000'],
+  origin: [
+    'http://localhost:3000',
+    'https://chat-application-client-ruddy.vercel.app',
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -38,7 +41,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Setup API routes
-app.use('/api/v1',router);
+app.use('/api/v1', router);
 
 // Error handling middleware
 app.use(GlobalErrorHandler);
