@@ -1,38 +1,28 @@
 import httpStatus from 'http-status';
 import ApiError from '../../../errors/ApiErrors';
 import prisma from '../../../shared/prisma';
+// import channelClients from '../../../server';
 
-// send replay
-const sendReplay = async (
+const sendMessage = async (
   senderId: string,
-  ticketId: string,
-  message: string
+  receiverId: string,
+  message: string,
+  imageUrls: string[]
 ) => {
-  if (!senderId) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'User not found');
-  }
-  const ticket = await prisma.ticket.findUnique({
-    where: { id: ticketId },
-    include: {
-      user: {
-        select: { id: true },
-      },
-    },
-  });
-
-  if (!ticket || !ticket.user) {
-    throw new ApiError(httpStatus.NOT_FOUND, 'Receiver not found');
-  }
-
-  const receiverId = ticket.user.id;
-
   const [person1, person2] = [senderId, receiverId].sort();
   const channelName = person1 + person2;
 
+  if (!senderId) {
+    throw new ApiError(httpStatus.UNAUTHORIZED, 'UNAUTHORIZED');
+  }
+
+  // use transaction
   const [channel, newMessage] = await prisma.$transaction(
     async (prismaTransaction) => {
       let channel = await prismaTransaction.channel.findFirst({
-        where: { channelName: channelName },
+        where: {
+          channelName: channelName,
+        },
       });
 
       if (!channel) {
@@ -45,13 +35,13 @@ const sendReplay = async (
         });
       }
 
-      //create message
       //  message created
-      const newMessage = await prismaTransaction.replay.create({
+      const newMessage = await prismaTransaction.message.create({
         data: {
           message,
           senderId,
           channelName: channelName,
+          files: imageUrls,
         },
         include: {
           sender: {
@@ -75,24 +65,37 @@ const sendReplay = async (
       channelName: channelName,
     },
     include: {
-      replay: true,
+      messages: true,
     },
     orderBy: {
       createdAt: 'desc',
     },
   });
 
+  // // Broadcast the new message to all WebSocket clients subscribed to the channel
+  // const connectedClients = channelClients.get(channel.id) || new Set();
+  // const messagePayload = {
+  //   type: 'newMessage',
+  //   channelId: channel.id,
+  //   data: newMessage,
+  // };
+
+  // connectedClients.forEach((client: any) => {
+  //   if (client.readyState === WebSocket.OPEN) {
+  //     client.send(JSON.stringify(messagePayload));
+  //   }
+  // });
+
   return allMessages;
 };
 
-// get all messages
-const getMessages = async (channelName: string) => {
+const getMessagesFromDB = async (channelName: string) => {
   const message = await prisma.channel.findMany({
     where: {
       channelName: channelName,
     },
     select: {
-      replay: {
+      messages: {
         include: {
           sender: {
             select: {
@@ -110,7 +113,6 @@ const getMessages = async (channelName: string) => {
   return message;
 };
 
-// get user channels
 const getUserChannels = async (userId: string) => {
   const channels = await prisma.channel.findMany({
     where: {
@@ -138,8 +140,8 @@ const getUserChannels = async (userId: string) => {
   return channels;
 };
 
-export const replayService = {
-  sendReplay,
-  getMessages,
+export const messageServices = {
+  sendMessage,
+  getMessagesFromDB,
   getUserChannels,
 };

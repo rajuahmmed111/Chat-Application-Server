@@ -1,15 +1,28 @@
-// routes/channel.routes.ts
-import express from 'express';
+
+import { Router } from 'express';
+import { messageControllers } from './message.controller';
 import auth from '../../middleware/auth';
+import { fileUploader } from '../../../helpers/fileUploader';
+import { parseBodyData } from '../../middleware/parseBodyData';
 
-const router = express.Router();
+const router = Router();
 
-// Channel routes
-router.post('/', auth(), ChannelController.createChannel);
-router.get('/', auth(), ChannelController.getUserChannels);
-router.get('/:channelId', auth(), ChannelController.getChannelById);
-router.post('/:channelId/members', auth(), ChannelController.addChannelMember);
-router.delete('/:channelId/members/:userId', auth(), ChannelController.removeChannelMember);
-router.get('/:channelId/messages', auth(), ChannelController.getChannelMessages);
+// send message
+router.post(
+  '/send-message/:receiverId',
+  auth(),
+  //   fileUploader.uploadMessageImages,
+  parseBodyData,
+  messageControllers.sendMessage
+);
 
-export const channelRoutes = router;
+router.get('/channels', auth(), messageControllers.getUserChannels);
+
+// get all message
+router.get(
+  '/get-message/:channelName',
+  auth(),
+  messageControllers.getMessagesFromDB
+);
+
+export const messageRoutes = router;

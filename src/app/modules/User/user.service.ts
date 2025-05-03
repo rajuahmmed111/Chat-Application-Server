@@ -14,7 +14,7 @@ const createUser = async (payload: any) => {
   });
 
   if (existingUser) {
-    if (existingUser.UserStatus === UserStatus.BLOCK) {
+    if (existingUser.userStatus === UserStatus.BLOCK) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         'This user is inactive and cannot be created.'
@@ -107,7 +107,7 @@ const deleteUser = async (userId: string, loggedId: string) => {
 const getNewMembers = async () => {
   const users = await prisma.user.findMany({
     where: {
-      UserStatus: UserStatus.ACTIVE,
+      userStatus: UserStatus.ACTIVE,
     },
     select: {
       id: true,
@@ -149,7 +149,7 @@ const updateUser = async (email: string, updates: UpdateUserInput) => {
     select: {
       id: true,
       email: true,
-      UserStatus: true,
+      userStatus: true,
       profileImage: true,
       createdAt: true,
       updatedAt: true,

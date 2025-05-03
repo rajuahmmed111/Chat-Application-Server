@@ -1,7 +1,7 @@
 import express from 'express';
 import { authRoutes } from '../modules/Auth/auth.routes';
 import { userRoute } from '../modules/User/user.route';
-import { replayRoute } from '../modules/Message/message.route';
+import { messageRoutes } from '../modules/Message/message.route';
 
 const router = express.Router();
 
@@ -14,10 +14,10 @@ const moduleRoutes = [
     path: '/auth',
     route: authRoutes,
   },
-  
+
   {
-    path: '/replay',
-    route: replayRoute,
+    path: '/messages',
+    route: messageRoutes,
   },
 ];
 

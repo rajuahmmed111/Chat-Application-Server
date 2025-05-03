@@ -28,59 +28,95 @@ enum Role {
 // ---------------------------------------------------------
 
 model User {
-    id             String          @id @default(auto()) @map("_id") @db.ObjectId
-    firstName      String
-    lastName       String?
-    email          String          @unique
-    password       String
-    phone          String
-    userName       String          @unique
-    dateOfBirth    DateTime?
-    profileImage   String?         @default("https://i.ibb.co.com/XfLzVy23/download.png")
-    userStatus     UserStatus      @default(ACTIVE)
-    otp            String?
-    otpExpiry      DateTime?
-    hexCode        String?
-    role           Role            @default(USER)
-    createdAt      DateTime        @default(now())
-    updatedAt      DateTime        @updatedAt
-    messages       Message[]
-    channelMembers ChannelMember[]
+    id           String     @id @default(auto()) @map("_id") @db.ObjectId
+    firstName    String
+    lastName     String?
+    email        String     @unique
+    password     String
+    phone        String
+    userName     String     @unique
+    dateOfBirth  DateTime?
+    profileImage String?    @default("https://i.ibb.co.com/XfLzVy23/download.png")
+    userStatus   UserStatus @default(ACTIVE)
+    otp          String?
+    otpExpiry    DateTime?
+    hexCode      String?
+    role         Role       @default(USER)
+    createdAt    DateTime   @default(now())
+    updatedAt    DateTime   @updatedAt
+    // messages       Message[]
+    // channelMembers ChannelMember[]
+
+    messages Message[] @relation("sentMessages")
+    person1  Channel[] @relation("ChannelPerson1")
+    person2  Channel[] @relation("ChannelPerson2")
 
     @@map("users")
 }
 
+// model Channel {
+//     id        String          @id @default(auto()) @map("_id") @db.ObjectId
+//     name      String?
+//     type      String          @default("direct") // "direct" or "group"
+//     createdAt DateTime        @default(now())
+//     updatedAt DateTime        @updatedAt
+//     messages  Message[]
+//     members   ChannelMember[]
+// }
+
+// model ChannelMember {
+//     id        String @id @default(auto()) @map("_id") @db.ObjectId
+//     userId    String @db.ObjectId
+//     channelId String @db.ObjectId
+
+//     user    User    @relation(fields: [userId], references: [id])
+//     channel Channel @relation(fields: [channelId], references: [id])
+
+//     @@unique([userId, channelId])
+//     @@map("channel_members")
+// }
+
+// model Message {
+//     id        String   @id @default(auto()) @map("_id") @db.ObjectId
+//     channelId String   @db.ObjectId
+//     senderId  String   @db.ObjectId
+//     content   String
+//     timestamp DateTime @default(now())
+//     type      String   @default("text") // "text", "image", "file"
+//     status    String   @default("sent") // "sent", "delivered", "read"
+
+//     channel Channel @relation(fields: [channelId], references: [id])
+//     sender  User    @relation(fields: [senderId], references: [id])
+// }
+
 model Channel {
-    id        String          @id @default(auto()) @map("_id") @db.ObjectId
-    name      String?
-    type      String          @default("direct") // "direct" or "group"
-    createdAt DateTime        @default(now())
-    updatedAt DateTime        @updatedAt
+    id          String   @id @default(auto()) @map("_id") @db.ObjectId
+    channelName String   @unique
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    //Relations
+    person1Id String?   @db.ObjectId
+    person1   User?     @relation("ChannelPerson1", fields: [person1Id], references: [id])
+    person2Id String?   @db.ObjectId
+    person2   User?     @relation("ChannelPerson2", fields: [person2Id], references: [id])
     messages  Message[]
-    members   ChannelMember[]
-}
 
-model ChannelMember {
-    id        String @id @default(auto()) @map("_id") @db.ObjectId
-    userId    String @db.ObjectId
-    channelId String @db.ObjectId
-
-    user    User    @relation(fields: [userId], references: [id])
-    channel Channel @relation(fields: [channelId], references: [id])
-
-    @@unique([userId, channelId])
-    @@map("channel_members")
+    @@map("channels")
 }
 
 model Message {
     id        String   @id @default(auto()) @map("_id") @db.ObjectId
-    channelId String   @db.ObjectId
-    senderId  String   @db.ObjectId
-    content   String
-    timestamp DateTime @default(now())
-    type      String   @default("text") // "text", "image", "file"
-    status    String   @default("sent") // "sent", "delivered", "read"
+    message   String?
+    files     String[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-    channel Channel @relation(fields: [channelId], references: [id])
-    sender  User    @relation(fields: [senderId], references: [id])
+    // Relations
+    senderId    String   @db.ObjectId
+    sender      User     @relation("sentMessages", fields: [senderId], references: [id])
+    channelName String
+    Channel     Channel? @relation(fields: [channelName], references: [channelName])
+
+    @@map("messages")
 }
